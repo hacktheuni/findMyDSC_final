@@ -1,0 +1,199 @@
+{% extends 'base/superAdminBase.html' %}
+{% block subAdminActive %} active {% endblock subAdminActive %}
+{% block title %} List of Entities - FindMyDSC {% endblock title %}
+{% block container %}
+<!-- Bordered Table -->
+<div class="card">
+  <div class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
+    <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0)"><i class="bx bx-menu bx-sm"></i></a>
+  </div>
+  <h3 class="card-header">Users</h3>
+  <div class="card-body">
+    <form action="{% url 'action' %}" method="post">
+      {% csrf_token %}
+      <div class="d-flex align-items-center" id="navbar-collapse">
+        <!-- Search -->
+        <div class="align-items-center">
+          <div class="input-group input-group-merge" style="width: 22rem;">
+            <span class="input-group-text"><i class="bx bx-search"></i></span>
+            <input type="text" class="form-control" placeholder="Search..." id="search" />
+          </div>
+        </div>
+        <div style="margin-left: 2rem;">
+          <span id="rowCount"></span><span style="margin-left: .5rem; font-weight:100; font-size:small;">entries
+            found</span>
+        </div>
+        <div class="flex-row d-flex align-items-center ms-auto">
+          <button class="menu-link btn btn-success me-3" name="action_type" value="activate"
+            type="submit">Activate</button>
+          <button class="menu-link btn btn-outline-danger" name="action_type" value="deactivate"
+            type="submit">Deactivate</button>
+        </div>
+
+      </div>
+      <div class="table-responsive mt-3" style="max-height: calc(100vh - 199px);min-height: 5rem;">
+        <table class="table table-bordered display" id="myTable">
+          <thead class="sticky-top bg-white">
+            <tr>
+              <th style="width: 20rem;min-width: 9rem;">Company Name</th>
+              <th style="width: 12rem;">Company Type</th>
+              <th style="width: 10rem;">Phone</th>
+              <th style="width: 6rem;min-width: 14rem;">Email</th>
+              <th style="min-width: 7rem;width: 0rem;">Employees</th>
+              <th style="min-width: 4rem;width: 0rem;">DSCs</th>
+              <th style="min-width: 10rem;width: 10rem;">Register Date</th>
+              <th style="min-width: 8rem;width: 5rem;">Status</th>
+              <th style="width: 0%;">Select</th>
+            </tr>
+            <tr>
+              <td>
+                <input class="form-control" placeholder="Search..." type="search" />
+              </td>
+              <td>
+                <select class="form-control" style="padding: .4rem 1rem;">
+                  <option value="">All</option>
+                  <option value="Company/ LLP">Company/ LLP</option>
+                  <option value="Chartered Accountant">Chartered Accountant</option>
+                  <option value="Company Secretary">Company Secretary</option>
+                  <option value="Cost Accountant">Cost Accountant</option>
+                  <option value="Others">Others</option>
+                </select>
+              </td>
+              <td>
+                <input class="form-control" placeholder="Search..." type="search" />
+              </td>
+              <td>
+                <input class="form-control" placeholder="Search..." type="search" />
+              </td>
+              <td>
+                <input class="form-control" placeholder="Search..." type="search" />
+              </td>
+              <td>
+                <input class="form-control" placeholder="Search..." type="search" />
+              </td>
+              <td>
+                <input class="form-control" placeholder="Search..." type="search" />
+              </td>
+              <td>
+                <select class="form-control" style="padding: .4rem 1rem;" onchange="filterSearchOthers()">
+                  <option value="">All</option>
+                  <option value="Activated">Activated</option>
+                  <option value="Deactivated">Deactivated</option>
+                </select>
+              </td>
+              <td style="text-align: center;">
+                <input class="form-check-input" type="checkbox" value="" id="selectAll" />
+              </td>
+            </tr>
+          </thead>
+          <tbody>
+            {% for subAdmin in subAdmins %}
+            <tr>
+              <td>{{subAdmin.subAdminName}}</td>
+              <td>{{subAdmin.subAdminType}}</td>
+              <td>{{subAdmin.subAdminPhone}}</td>
+              <td>{{subAdmin.subAdminEmail}}</td>
+              <td>{{subAdmin.active_user_count|default:"0"}}</td>
+              <td>{{subAdmin.dsc_count|default:"0"}}</td>
+              <td>{{subAdmin.subAdminRegisterDate|date:"d-m-Y H:i:s"}}</td>
+              {% if subAdmin.isActive %}
+              <td style="color: green;">Activated</td>
+              {% else %}
+              <td style="color: red;">Deactivated</td>
+              {% endif %}
+              <td style="text-align: center;">
+                <input class="form-check-input selectItem" type="checkbox" name="subAdminIDs"
+                  value="{{subAdmin.subAdminID}}" />
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  jQuery.extend(jQuery.fn.dataTable.ext.type.order, {
+    "date-eu-pre": function (date) {
+      if (!date) return 0;
+      const eu_date = date.split(' ');
+      const datePart = eu_date[0].split('-');
+      const timePart = eu_date[1] || '00:00:00';
+      const iso = `${datePart[2]}-${datePart[1]}-${datePart[0]}T${timePart}`;
+      return new Date(iso).getTime();
+    },
+    "date-eu-asc": function (a, b) {
+      return a - b;
+    },
+    "date-eu-desc": function (a, b) {
+      return b - a;
+    }
+  });
+  $(document).ready(function () {
+    const table = $('#myTable').DataTable({
+      paging: false,
+      ordering: true,
+      responsive: true,
+      order: [],
+      searching: true, // Disable built-in global search
+      dom: 'lrtp',
+      columnDefs: [
+        {
+          targets: [6], // Adjust if needed based on actual index
+          type: 'date-eu'
+        },
+        {
+          targets: [8],
+          orderable: false
+        }
+      ],
+      initComplete: function () {
+        // Column-specific filtering
+        this.api().columns().every(function () {
+          const column = this;
+          $('input, select', column.header()).on('keyup change', function () {
+            let val = $(this).val();
+            if ($(this).is('select')) {
+              val = $.fn.dataTable.util.escapeRegex(val);
+              column.search(val ? '^' + val + '$' : '', true, false).draw();
+            } else {
+              column.search(val).draw();
+            }
+          });
+        });
+      }
+    });
+
+    // Custom global search field
+    $('#search').on('keyup change', function () {
+      table.search(this.value).draw(); // Now it acts as the global search
+    });
+
+    // Prevent sorting when clicking on filters
+    $('#myTable thead tr:eq(1) td').each(function () {
+      $(this).find('input, select').on('click', function (e) {
+        e.stopPropagation();
+      });
+    });
+    // Function to update your custom row count display
+    function updateRowInfo() {
+      // Get paging information from DataTables
+      const info = table.page.info();
+      // Update your specific location; for example, showing displayed count and total records:
+      $('#rowCount').html("Showing " + info.recordsDisplay.toLocaleString() + " entries");
+    }
+
+    // Update on every draw event (e.g., after search, pagination, etc.)
+    table.on('draw', function () {
+      updateRowInfo();
+    });
+
+    // Call once to initialize the display on page load
+    updateRowInfo();
+  });
+</script>
+<!-- / Bordered Table -->
+
+{% endblock %}

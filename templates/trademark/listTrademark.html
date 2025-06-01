@@ -1,0 +1,284 @@
+{% extends base %}
+{% block trademarkActive %} active {% endblock trademarkActive %}
+{% block title %} List of Trademark - FindMyDSC {% endblock title %}
+{% block container %}
+<!-- Bordered Table -->
+
+{% if user.isClientUser %}
+
+<style>
+    .varDisplay {
+        display: none;
+    }
+</style>
+
+{% endif %}
+
+<div class="card">
+    <div class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
+        <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0)"><i class="bx bx-menu bx-sm"></i></a>
+    </div>
+    {% if show_archived %}
+    <h3 class="card-header">Trademark - Archived</h3>
+    {% else %}
+    <h3 class="card-header">Trademark</h3>
+    {% endif %}
+    <div class="card-body">
+        <form action="{% url 'deleteTrademark' %}" method="post">
+            {% csrf_token %}
+            <div class="d-flex align-items-center" id="navbar-collapse">
+                <!-- Search -->
+                <div class="align-items-center">
+                    <div class="input-group input-group-merge" style="width: 22rem;">
+                        <span class="input-group-text"><i class="bx bx-search"></i></span>
+                        <input type="text" class="form-control" placeholder="Search..." id="search" />
+                    </div>
+                </div>
+                <div style="margin-left: 2rem;">
+                    <span id="rowCount"></span>
+                </div>
+                <!-- /Search -->
+
+                <div class="flex-row d-flex align-items-center ms-auto">
+                    {% if show_archived %}
+                    <a href="{% url 'listTrademark' %}" class="menu-link btn btn-outline-primary me-4">Show Active</a>
+                    {% else %}
+                    <a href="{% url 'listTrademark' %}?archived=true"
+                        class="menu-link btn btn-outline-primary me-4">Show
+                        Archived</a>
+                    {% endif %}
+                    {% if not user.isClientUser or user.isClientUser and user.canReadWrite %}
+                    <a href="{% url 'addTrademark' %}" class="menu-link btn btn-primary me-4">Add Trademark</a>
+
+                    <input type="button" class="menu-link btn btn-outline-danger" data-bs-toggle="modal"
+                        data-bs-target="#deleteTrademark" value="Delete">
+                    {% endif %}
+                </div>
+            </div>
+            <div class="table-responsive mt-3" style="max-height: calc(100vh - 199px);min-height: 5rem;">
+                <table class="display table table-bordered" id="myTable">
+                    <thead class="sticky-top bg-white">
+                        <tr>
+                            <th>SRN</th>
+                            <th>Name of Trademark</th>
+                            <th>Application No.</th>
+                            <th>Current Status 1</th>
+                            <th>Current Status 2</th>
+                            <th>Reply Due Date</th>
+                            <th>Hearing Date</th>
+                            <th class="varDisplay">Group</th>
+                            <th>Renewal Date</th>
+                            {% if not user.isClientUser or user.isClientUser and user.canReadWrite %}
+                            <th>Action</th>
+                            <th>Select</th>
+                            {% endif %}
+                        </tr>
+                        <tr>
+                            <td><input class="form-control" placeholder="Search..." type="hidden" /></td>
+                            <td><input class="form-control" placeholder="Search..." type="search" /></td>
+                            <td><input class="form-control" placeholder="Search..." type="search" /></td>
+                            <td>
+                                <select class="form-control" style="padding: .4rem 1rem;">
+                                    <option value="">All</option>
+                                    <option value="Application to be filed">Application to be filed</option>
+                                    <option value="Formalities Chk Pass">Formalities Chk Pass</option>
+                                    <option value="Marked for Exam">Marked for Exam</option>
+                                    <option value="Send To Vienna Codification">Send To Vienna Codification</option>
+                                    <option value="Objected">Objected</option>
+                                    <option value="Accepted">Accepted</option>
+                                    <option value="Opposed">Opposed</option>
+                                    <option value="Abandoned">Abandoned</option>
+                                    <option value="Registered">Registered</option>
+                                    <option value="Rectification filed">Rectification filed</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" style="padding: .4rem 1rem;">
+                                    <option value="">All</option>
+                                    <option value="Awaiting Reply to Examination Report">Awaiting Reply to Examination
+                                        Report</option>
+                                    <option value="Reply Submitted">Reply Submitted</option>
+                                    <option value="Ready for Show cause Hearing">Ready for Show cause Hearing</option>
+                                    <option value="Hearing notice (Show Cause)">Hearing notice (Show Cause)</option>
+                                    <option value="Hearing notice (Adjourned)">Hearing notice (Adjourned)</option>
+                                    <option value="TM-O Filed">TM-O Filed</option>
+                                    <option value="Opposition Notice Received / Served">Opposition Notice Received /
+                                        Served</option>
+                                    <option value="Rule 45 Received / Served">Rule 45 Received / Served</option>
+                                    <option value="Counter Stmt Received / Served">Counter Stmt Received / Served
+                                    </option>
+                                    <option value="Rule 46 Received / Served">Rule 46 Received / Served</option>
+                                    <option value="Assignment Pending">Assignment Pending</option>
+                                </select>
+                            </td>
+                            <td><input class="form-control" placeholder="Search..." type="search" /></td>
+                            <td class="varDisplay"><input class="form-control" placeholder="Search..." type="search" />
+                            </td>
+                            <td><input class="form-control" placeholder="Search..." type="search" /></td>
+                            <td><input class="form-control" placeholder="Search..." type="search" /></td>
+                            {% if not user.isClientUser or user.isClientUser and user.canReadWrite %}
+                            <td></td>
+                            <td style="text-align: center;">
+                                <input class="form-check-input" type="checkbox" value="" id="selectAll" />
+                            </td>
+                            {% endif %}
+                        </tr>
+                    </thead>
+
+
+                    {% load static %}
+
+                    <tbody>
+                        {% for tm in trademark %}
+                        <tr>
+                            <td>{{ tm.indexSRN }}</td>
+                            {% if not user.isClientUser or user.isClientUser and user.canReadWrite %}
+                            <td><a href="{% url 'updateTrademark' tm.trademarkID %}">{{ tm.nameOfTrademark }}</a></td>
+                            {% else %}
+                            <td>{{ tm.nameOfTrademark }}</td>
+                            {% endif %}
+                            <td>{{ tm.applicationNo }}</td>
+                            <td {% if tm.is_objected %}style="color: orange;" {% elif tm.is_accepted %}style="color: blue;" 
+                            {% elif tm.is_registered %}style="color: green;"{% elif tm.is_abandoned %}style="color: grey;"{% elif tm.is_opposed %}style="color: red;" {% endif %}>{{ tm.status1 }}</td>
+                            <td>{{ tm.status2 }}</td>
+                            <td>{{ tm.lastDate|date:"d-m-Y" }}</td>
+                            <td>{{ tm.hearingDate|date:"d-m-Y" }}</td>
+                            <td class="varDisplay">{{ tm.groupID.groupName }}</td>
+                            <td>{{ tm.expiryDate|date:"d-m-Y" }}</td>
+                            {% if not user.isClientUser or user.isClientUser and user.canReadWrite %}
+                            <td style="text-align: center;">
+                                <a href="{% url 'updateTrademark' tm.trademarkID %}">
+                                    <img src="{% static 'assets/img/pencil.png' %}" alt="Edit" style="width: 1.7rem;">
+                                </a>
+                            </td>
+                            <td style="text-align: center;">
+                                <input class="form-check-input selectItem" type="checkbox" name="trademarkIDs"
+                                    value="{{ tm.trademarkID }}" />
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="deleteTrademark" tabindex="-1" aria-labelledby="deleteTrademarkLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteTrademarkLongTitle">Confirmation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <h6 class="alert-heading fw-bold mb-1">Are you sure you want to delete
+                            Selected Trademark Records</h6>
+                        <p class="mb-0">Once you delete your dsc, there is no going back.
+                            Please be certain.</p>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="deleteTrademark" />
+                        <label class="form-check-label">I confirm to delete the selected Trademark Records</label>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="reset" data-bs-dismiss="modal" aria-label="Close"
+                            class="btn btn-outline-secondary">Close</button>
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </form>
+</div>
+</div>
+
+
+<script>
+    jQuery.extend(jQuery.fn.dataTable.ext.type.order, {
+        "date-eu-pre": function (date) {
+            if (!date) return 0;
+            const eu_date = date.split(' ');
+            const datePart = eu_date[0].split('-');
+            const timePart = eu_date[1] || '00:00:00';
+            const iso = `${datePart[2]}-${datePart[1]}-${datePart[0]}T${timePart}`;
+            return new Date(iso).getTime();
+        },
+        "date-eu-asc": function (a, b) {
+            return a - b;
+        },
+        "date-eu-desc": function (a, b) {
+            return b - a;
+        }
+    });
+
+    $(document).ready(function () {
+        const table = $('#myTable').DataTable({
+            paging: false,
+            ordering: true,
+            responsive: true,
+            order: [],
+            searching: true,
+            dom: 'lrtp',
+            columnDefs: [
+                {
+                    targets: [5, 6, 8], 
+                    type: 'date-eu'
+                },
+                {
+                    targets: [9, 10],
+                    orderable: false
+                }
+            ],
+            initComplete: function () {
+                // Column-specific filtering
+                this.api().columns().every(function () {
+                    const column = this;
+                    $('input, select', column.header()).on('keyup change', function () {
+                        let val = $(this).val();
+                        if ($(this).is('select')) {
+                            val = $.fn.dataTable.util.escapeRegex(val);
+                            column.search(val ? '^' + val + '$' : '', true, false).draw();
+                        } else {
+                            column.search(val).draw();
+                        }
+                    });
+                });
+            }
+        });
+
+        // Custom global search field
+        $('#search').on('keyup change', function () {
+            table.search(this.value).draw(); // Now it acts as the global search
+        });
+
+        // Prevent sorting when clicking on filters
+        $('#myTable thead tr:eq(1) td').each(function () {
+            $(this).find('input, select').on('click', function (e) {
+                e.stopPropagation();
+            });
+        });
+        // Function to update your custom row count display
+        function updateRowInfo() {
+            const info = table.page.info();
+            $('#rowCount').html("Showing " + info.recordsDisplay.toLocaleString() + " entries");
+        }
+
+        // Update on every draw event (e.g., after search, pagination, etc.)
+        table.on('draw', function () {
+            updateRowInfo();
+        });
+
+        // Call once to initialize the display on page load
+        updateRowInfo();
+    });
+</script>
+
+
+<!-- / Bordered Table -->
+
+{% endblock %}
